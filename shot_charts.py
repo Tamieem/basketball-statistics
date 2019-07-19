@@ -1,5 +1,6 @@
 from nba_api.stats.endpoints import shotchartdetail
 from nba_api.stats.endpoints import playbyplayv2
+from nba_api.stats.endpoints import boxscoreplayertrackv2
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -7,8 +8,6 @@ from matplotlib.patches import Circle, Rectangle, Arc
 from matplotlib.offsetbox import OffsetImage
 import urllib.request
 from IPython.display import display
-
-
 
 
 def create_court(ax =None, color='black', lw=2, out_lines=False):
@@ -60,6 +59,11 @@ shot_df = pd.DataFrame(shots, columns=headers)
 sns.set_style("white")
 sns.set_color_codes()
 plt.figure(figsize=(12,11))
+game_ids = shot_df.GAME_ID
+for game_id in game_ids:
+    game = playbyplayv2.PlayByPlayV2(game_id=game_id)
+    boxscore = boxscoreplayertrackv2.BoxScorePlayerTrackV2(game_id)
+    fg = boxscore.player_stats.get_dict()
 plt.scatter(shot_df.LOC_X, shot_df.LOC_Y, c='red')
 plt.style.use('classic')
 ax = create_court(out_lines=True)
