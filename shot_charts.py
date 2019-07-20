@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc
 from matplotlib.offsetbox import OffsetImage
 import urllib.request
+import requests
 from IPython.display import display
 
 
@@ -49,6 +50,11 @@ def create_court(ax =None, color='black', lw=2, out_lines=False):
         ax.add_patch(item)
 
     return ax
+
+shot_chart_url = "https://stats.nba.com/stats/shotchartdetail?AheadBehind=&CFID=33&CFPARAMS=2018-19&ClutchTime=&Conference=&ContextFilter=&ContextMeasure=FGA&DateFrom=&DateTo=&Division=&EndPeriod=10&EndRange=28800&GROUP_ID=&GameEventID=&GameID=&GameSegment=&GroupID=&GroupMode=&GroupQuantity=5&LastNGames=0&LeagueID=00&Location=&Month=0&OnOff=&OpponentTeamID=0&Outcome=&PORound=0&Period=0&PlayerID=1628995&PlayerID1=&PlayerID2=&PlayerID3=&PlayerID4=&PlayerID5=&PlayerPosition=&PointDiff=&Position=&RangeType=0&RookieYear=&Season=2018-19&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StartPeriod=1&StartRange=0&StarterBench=&TeamID=0&VsConference=&VsDivision=&VsPlayerID1=&VsPlayerID2=&VsPlayerID3=&VsPlayerID4=&VsPlayerID5=&VsTeamID="
+response = requests.get(shot_chart_url)
+headers1 = response.json()['resultSets'][0]['headers']
+shots1 = response.json()['resultSets'][0]['rowSet']
 
 player = shotchartdetail.ShotChartDetail(player_id=1628995, team_id=1610612752)
 headers = player.shot_chart_detail.get_dict()['headers']
