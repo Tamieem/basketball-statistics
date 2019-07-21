@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Patch
 from matplotlib.offsetbox import OffsetImage
 import urllib.request
-import mpld3
 
 
 def create_court(ax =None, color='black', lw=2, out_lines=False):
@@ -48,6 +47,7 @@ def create_court(ax =None, color='black', lw=2, out_lines=False):
 
     return ax
 
+
 player = shotchartdetail.ShotChartDetail(player_id=1628995, team_id=1610612752, context_measure_simple='FGA')
 headers = player.shot_chart_detail.get_dict()['headers']
 shots = player.shot_chart_detail.get_dict()['data']
@@ -69,11 +69,11 @@ for shot in shots:
     else:
         plt.scatter(shot[17], shot[18], c='red', label=""+shot[11]+" vs "+shot[23] + " on " + date)
 plt.style.use('classic')
-#plt.legend(loc='bottom right')
 ax = create_court(out_lines=True)
 ax.set_xlabel('')
 ax.set_ylabel('')
 ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
+ax.text(-100, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots', fontsize=18)
 ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=14)
 missed = Patch(color='blue', label='Missed Shot')
 made = Patch(color='red', label = "Made Shot")
