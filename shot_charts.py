@@ -51,12 +51,7 @@ def create_court(ax =None, color='black', lw=2, out_lines=False):
 
     return ax
 
-shot_chart_url = "https://stats.nba.com/stats/shotchartdetail?AheadBehind=&CFID=33&CFPARAMS=2018-19&ClutchTime=&Conference=&ContextFilter=&ContextMeasure=FGA&DateFrom=&DateTo=&Division=&EndPeriod=10&EndRange=28800&GROUP_ID=&GameEventID=&GameID=&GameSegment=&GroupID=&GroupMode=&GroupQuantity=5&LastNGames=0&LeagueID=00&Location=&Month=0&OnOff=&OpponentTeamID=0&Outcome=&PORound=0&Period=0&PlayerID=1628995&PlayerID1=&PlayerID2=&PlayerID3=&PlayerID4=&PlayerID5=&PlayerPosition=&PointDiff=&Position=&RangeType=0&RookieYear=&Season=2018-19&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StartPeriod=1&StartRange=0&StarterBench=&TeamID=0&VsConference=&VsDivision=&VsPlayerID1=&VsPlayerID2=&VsPlayerID3=&VsPlayerID4=&VsPlayerID5=&VsTeamID="
-response = requests.get(shot_chart_url)
-headers1 = response.json()['resultSets'][0]['headers']
-shots1 = response.json()['resultSets'][0]['rowSet']
-
-player = shotchartdetail.ShotChartDetail(player_id=1628995, team_id=1610612752)
+player = shotchartdetail.ShotChartDetail(player_id=1628995, team_id=1610612752, context_measure_simple='FGA')
 headers = player.shot_chart_detail.get_dict()['headers']
 shots = player.shot_chart_detail.get_dict()['data']
 pic_link = urllib.request.urlretrieve("https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/"+str(shots[0][3])+".png")
@@ -66,16 +61,17 @@ sns.set_style("white")
 sns.set_color_codes()
 plt.figure(figsize=(12,11))
 game_ids = shot_df.GAME_ID
-for game_id in game_ids:
-    game = playbyplayv2.PlayByPlayV2(game_id=game_id)
-    boxscore = boxscoreplayertrackv2.BoxScorePlayerTrackV2(game_id)
-    fg = boxscore.player_stats.get_dict()
-plt.scatter(shot_df.LOC_X, shot_df.LOC_Y, c='red')
+for shot in shots:
+    if shot[10] == 'Missed Shot':
+        plt.scatter(shot[17], shot[18], c='red', label="Missed")
+    else:
+        plt.scatter(shot[17], shot[18], c='blue', label="Made")
 plt.style.use('classic')
+#plt.legend(loc='bottom right')
 ax = create_court(out_lines=True)
 ax.set_xlabel('')
 ax.set_ylabel('')
-ax.set_title(""+str(shots[0][4]) + " FGM", y=1.2, fontsize=18)
+ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=18)
 ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=12)
 ax.set_xlim(-250, 250)
 ax.set_ylim(422.5,-47.5)
