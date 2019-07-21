@@ -5,6 +5,67 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Patch
 from matplotlib.offsetbox import OffsetImage
 import urllib.request
+import sys
+
+## WILL NEED TO Create  dropdown menus for each variable, primarily the first 3 and then the rest can be hidden under an
+## "advanced filters" button
+def main():
+    player_id = "1628995"
+    ## Kevin Knox, because he was the player I was originally thinking of when I first started this project...
+    # pretty low FG% even for a rookie sheesh
+    team_id = "1610612752" ## New York Knicks
+    context_measure_simple = 'default'
+    last_n_games = '0'
+    league_id = '00'
+    month = '0'
+    opp_team = '0'
+    quarter = '0'
+    season_type = 'Regular Season'
+    ### There are other filters to the search but they are nullable so we don't need to specify their values unless warranted
+    player = shotchartdetail.ShotChartDetail(player_id=player_id, team_id=team_id,
+                                             context_measure_simple=context_measure_simple, last_n_games=last_n_games,
+                                             league_id=league_id, month=month, opponent_team_id=opp_team, period=quarter,
+                                             season_type_all_star=season_type)
+    get_Shotchart(player)
+
+
+def get_Shotchart(player):
+    shots = player.shot_chart_detail.get_dict()['data']
+    pic_link = urllib.request.urlretrieve(
+        "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/"+str(shots[0][3])+".png")
+    pic = plt.imread(pic_link[0])
+    sns.set_style("white")
+    sns.set_color_codes()
+    plt.figure(figsize=(12,11))
+    for shot in shots:
+        time = shot[21]
+        year = str(time[0:4])
+        date_month = str(time[4:6])
+        day = str(time[6:])
+        date = str('' + date_month+'/'+day+'/'+year)
+        if shot[10] == 'Missed Shot':
+            plt.scatter(shot[17], shot[18], c='blue', label=""+shot[11]+" vs "+shot[23] + " on " + date)
+        else:
+            plt.scatter(shot[17], shot[18], c='red', label=""+shot[11]+" vs "+shot[23] + " on " + date)
+    plt.style.use('classic')
+    ax = create_court(out_lines=True)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
+    ax.text(-100, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots',
+            fontsize=18)
+    ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=14)
+    missed = Patch(color='blue', label='Missed Shot')
+    made = Patch(color='red', label = "Made Shot")
+    plt.legend(handles=[missed,made], loc='lower right')
+    ax.set_xlim(-250, 250)
+    ax.set_ylim(422.5,-47.5)
+    plt.axis('off')
+    ax.set_facecolor('#EEEEEE')
+    img = OffsetImage(pic, zoom=.6)
+    img.set_offset((890,921))
+    ax.add_artist(img)
+    plt.show()
 
 
 def create_court(ax =None, color='black', lw=2, out_lines=False):
@@ -46,43 +107,3 @@ def create_court(ax =None, color='black', lw=2, out_lines=False):
         ax.add_patch(item)
 
     return ax
-
-
-player = shotchartdetail.ShotChartDetail(player_id=1628995, team_id=1610612752, context_measure_simple='FGA')
-headers = player.shot_chart_detail.get_dict()['headers']
-shots = player.shot_chart_detail.get_dict()['data']
-pic_link = urllib.request.urlretrieve("https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/"+str(shots[0][3])+".png")
-pic = plt.imread(pic_link[0])
-shot_df = pd.DataFrame(shots, columns=headers)
-sns.set_style("white")
-sns.set_color_codes()
-plt.figure(figsize=(12,11))
-game_ids = shot_df.GAME_ID
-for shot in shots:
-    time = shot[21]
-    year = str(time[0:4])
-    month = str(time[4:6])
-    day = str(time[6:])
-    date = str('' + month+'/'+day+'/'+year)
-    if shot[10] == 'Missed Shot':
-        plt.scatter(shot[17], shot[18], c='blue', label=""+shot[11]+" vs "+shot[23] + " on " + date)
-    else:
-        plt.scatter(shot[17], shot[18], c='red', label=""+shot[11]+" vs "+shot[23] + " on " + date)
-plt.style.use('classic')
-ax = create_court(out_lines=True)
-ax.set_xlabel('')
-ax.set_ylabel('')
-ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
-ax.text(-100, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots', fontsize=18)
-ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=14)
-missed = Patch(color='blue', label='Missed Shot')
-made = Patch(color='red', label = "Made Shot")
-plt.legend(handles=[missed,made], loc='lower right')
-ax.set_xlim(-250, 250)
-ax.set_ylim(422.5,-47.5)
-plt.axis('off')
-ax.set_facecolor('#EEEEEE')
-img = OffsetImage(pic, zoom=.6)
-img.set_offset((890,921))
-ax.add_artist(img)
-plt.show()
