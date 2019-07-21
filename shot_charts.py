@@ -1,14 +1,11 @@
 from nba_api.stats.endpoints import shotchartdetail
-from nba_api.stats.endpoints import playbyplayv2
-from nba_api.stats.endpoints import boxscoreplayertrackv2
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle, Rectangle, Arc
+from matplotlib.patches import Circle, Rectangle, Arc, Patch
 from matplotlib.offsetbox import OffsetImage
 import urllib.request
-import requests
-from IPython.display import display
+import mpld3
 
 
 def create_court(ax =None, color='black', lw=2, out_lines=False):
@@ -62,19 +59,29 @@ sns.set_color_codes()
 plt.figure(figsize=(12,11))
 game_ids = shot_df.GAME_ID
 for shot in shots:
+    time = shot[21]
+    year = str(time[0:4])
+    month = str(time[4:6])
+    day = str(time[6:])
+    date = str('' + month+'/'+day+'/'+year)
     if shot[10] == 'Missed Shot':
-        plt.scatter(shot[17], shot[18], c='red', label="Missed")
+        plt.scatter(shot[17], shot[18], c='blue', label=""+shot[11]+" vs "+shot[23] + " on " + date)
     else:
-        plt.scatter(shot[17], shot[18], c='blue', label="Made")
+        plt.scatter(shot[17], shot[18], c='red', label=""+shot[11]+" vs "+shot[23] + " on " + date)
 plt.style.use('classic')
 #plt.legend(loc='bottom right')
 ax = create_court(out_lines=True)
 ax.set_xlabel('')
 ax.set_ylabel('')
-ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=18)
-ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=12)
+ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
+ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=14)
+missed = Patch(color='blue', label='Missed Shot')
+made = Patch(color='red', label = "Made Shot")
+plt.legend(handles=[missed,made], loc='lower right')
 ax.set_xlim(-250, 250)
 ax.set_ylim(422.5,-47.5)
+plt.axis('off')
+ax.set_facecolor('#EEEEEE')
 img = OffsetImage(pic, zoom=.6)
 img.set_offset((890,921))
 ax.add_artist(img)
