@@ -57,6 +57,7 @@ def get_Shotchart(player):
     sns.set_style("white")
     sns.set_color_codes()
     plt.figure(figsize=(12,11))
+    made_count=0
     for shot in shots:
         time = shot[21]
         year = str(time[0:4])
@@ -66,14 +67,16 @@ def get_Shotchart(player):
         if shot[10] == 'Missed Shot':
             plt.scatter(shot[17], shot[18], c='blue', label=""+shot[11]+" vs "+shot[23] + " on " + date)
         else:
+            made_count +=1
             plt.scatter(shot[17], shot[18], c='red', label=""+shot[11]+" vs "+shot[23] + " on " + date)
     plt.style.use('classic')
     ax = create_court(out_lines=True)
     ax.set_xlabel('')
     ax.set_ylabel('')
     ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
-    ax.text(-100, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots',
-            fontsize=18)
+    fg = round((made_count/len(shots)*100), 2)
+    ax.text(-150, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots, ' +
+            str(fg) + '% FG', fontsize=18)
     ax.text(-245, 420, 'Source: stats.nba.com \nCreated by: Tamieem Jaffary', fontsize=14)
     missed = Patch(color='blue', label='Missed Shot')
     made = Patch(color='red', label = "Made Shot")
@@ -87,8 +90,8 @@ def get_Shotchart(player):
     ax.add_artist(img)
     plt.show()
 
-## WILL NEED TO Create  dropdown menus for each variable, primarily the first 3 and then the rest can be hidden under an
-## "advanced filters" button
+## TODO Create  dropdown menus for each variable, primarily the first 3 and then the rest can be hidden under an
+## TODO "advanced filters" button
 #def main():
 player_id = 1628995
 ## Kevin Knox, because he was the player I was originally thinking of when I first started this project...
