@@ -13,13 +13,11 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 
-
 app = Flask(__name__)
 app.secret_key = 'random string'
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = 'ShotCharts/static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 def create_court(ax =None, color='black', lw=2, out_lines=False):
 
     if ax is None:
@@ -62,11 +60,86 @@ def create_court(ax =None, color='black', lw=2, out_lines=False):
     return ax
 
 
+def get_Shotchart(player):
+    shots = player.shot_chart_detail.get_dict()['data']
+    pic_link = urllib.request.urlretrieve(
+        "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/"+str(shots[0][3])+".png")
+    pic = plt.imread(pic_link[0])
+    plt.figure(figsize=(12, 11))
+    made_count=0
+    for shot in shots:
+        time = shot[21]
+        year = str(time[0:4])
+        date_month = str(time[4:6])
+        day = str(time[6:])
+        date = str('' + date_month+'/'+day+'/'+year)
+        if shot[10] == 'Missed Shot':
+            plt.scatter(shot[17], shot[18], c='blue', label=""+shot[11]+" vs "+shot[23] + " on " + date)
+        else:
+            made_count +=1
+            plt.scatter(shot[17], shot[18], c='red', label=""+shot[11]+" vs "+shot[23] + " on " + date)
+    plt.style.use('classic')
+    ax = create_court(out_lines=True)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
+    fg = round((made_count/len(shots)*100), 2)
+    ax.text(-25, -100, '' + shots[0][4] + ' ' + player.parameters['ContextMeasure'], fontsize=22)
+    ax.text(-150, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots, ' +
+            str(fg) + '% FG', fontsize=18)
+    ax.text(-245, 420, 'Source: stats.nba.com \nCreated by Tamieem Jaffary', fontsize=14)
+    missed = Patch(color='blue', label='Missed Shot')
+    made = Patch(color='red', label = "Made Shot")
+    plt.legend(handles=[missed,made], loc='lower right')
+    ax.set_xlim(-250, 250)
+    ax.set_ylim(422.5,-47.5)
+    plt.axis('off')
+    ax.set_facecolor('#EEEEEE')
+    img = OffsetImage(pic, zoom=.6)
+    img.set_offset((890,921))
+
 
 @app.route("/", methods=['GET', 'POST'])
 def home():
     ax = create_court()
+    player_id = 2544
+
+    if request.method== 'POST':
+        player_id = 1628995
+        ## Kevin Knox, because he was the player I was originally thinking of when I first started this project...
+        # pretty low FG% even for a rookie sheesh
+        team_id = 1610612752  ## New York Knicks
+        context_measure_simple = 'FGA'
+        last_n_games = '0'
+        league_id = '00'
+        month = '0'
+        opp_team_id = 0
+        period = '0'
+        season_type = 'Regular Season'
+        ### There are other filters to the search but they are nullable so we don't need to specify their values unless warranted
+        player_id = request.form['player']
+        player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_dict()['resultSets'][0]['rowSet']
+        team_id = player_info[0][16]
+        context_measure_simple = request.form['ContextMeasure']
+        season_type = request.form['SeasonType']
+        clutch_time_nullable = request.form['ClutchTime']
+        outcome_nullable = request.form['Outcome']
+        ahead_behind_nullable = request.form['While']
+        last_n_games = request.form['LastNGames']
+        period = request.form['Period']
+        month = request.form['Month']
+        opp_team_id = request.form['OppTeam']
+        player = shotchartdetail.ShotChartDetail(player_id=player_id, team_id=team_id,
+                                                 context_measure_simple=context_measure_simple,
+                                                 last_n_games=last_n_games, league_id=league_id, month=month,
+                                                 opponent_team_id=opp_team_id, period=period,
+                                                 clutch_time_nullable=clutch_time_nullable,
+                                                 outcome_nullable=outcome_nullable,
+                                                 ahead_behind_nullable=ahead_behind_nullable,
+                                                 season_type_all_star=season_type)
+        get_Shotchart(player)
     players_list = players.get_active_players()
+    team_list = teams.get_teams()
     seasons = ['1998-1999',
                '1999-2000',
                '2000-2001',
@@ -100,11 +173,11 @@ def home():
     last_n_games = [str(x) for x in range(1,26)]
     params = [context_measure, season_type, clutch_time, outcome, ahead_behind, period, month, last_n_games]
     img = io.BytesIO()
-    plt.xlim(-300, 300)
-    plt.ylim(422.5,-47.5)
+    # plt.xlim(-300, 300)
+    # plt.ylim(422.5,-47.5)
     plt.tick_params(labelbottom=False, labelleft=False)
     plt.savefig(img, format='png')
     img.seek(0)
     plot_url = base64.b64encode(img.getvalue()).decode()
-    return render_template('home.html', players_list=players_list, seasons=seasons, params=params, plot_url=plot_url)
+    return render_template('home.html', teams_list=team_list, players_list=players_list, seasons=seasons, params=params, plot_url=plot_url)
 

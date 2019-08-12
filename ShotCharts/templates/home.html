@@ -9,10 +9,11 @@
         <h2>Create a Shot Chart</h2>
         <img src="data:image/png;base64, {{ plot_url }}">
     </div>
+    <form action="" method="post">
     <div class="filters" style="margin-top: 10px; margin-bottom:20px;">
         <select name="player" id="select_player" method="GET" action="/" style="width: 250px !important; min-width: 100px; max-width: 500px;">
             {% for player in players_list  %}
-                <option value="{{ player[1] }}">{{ player[0] }}</option>
+                <option value={{ player['id'] }}>{{ player['full_name'] }}</option>
             {% endfor %}
         </select>
         <select name="Season" id="season" method="GET" action="/">
@@ -53,7 +54,13 @@
             {% endfor %}
             <option value=" " selected>--Game Scenario--</option>
         </select>
-        <select name="Quarter" id="period" method="GET" action="/">
+        <select name="OppTeam" id="opp_team" method="GET" action="/">
+            {% for team in teams_list %}
+                <option value={{ team['id'] }}>{{ team['full_name'] }}</option>
+            {% endfor %}
+            <option value=0 selected>--Opposing Team--</option>
+        </select>
+        <select name="Period" id="period" method="GET" action="/">
             {% for period in params[5] %}
                 <option value="{{ period }}" selected>{{ period }}</option>
             {%  endfor %}
@@ -81,6 +88,6 @@
             <option value="0" selected>--Last N Games--</option>
         </select>
      </div>
-
+    </form>
 </body>
 </html>
