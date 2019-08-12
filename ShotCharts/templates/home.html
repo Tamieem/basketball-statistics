@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tamieem's Shot Chart Maker</title>
+</head>
+<body>
+    <div class="display">
+        <h2>Create a Shot Chart</h2>
+        <img src="data:image/png;base64, {{ plot_url }}">
+    </div>
+    <div class="filters" style="margin-top: 10px; margin-bottom:20px;">
+        <select name="player" id="select_player" method="GET" action="/" style="width: 250px !important; min-width: 100px; max-width: 500px;">
+            {% for player in players_list  %}
+                <option value="{{ player[1] }}">{{ player[0] }}</option>
+            {% endfor %}
+        </select>
+        <select name="Season" id="season" method="GET" action="/">
+            {%  for season in seasons %}
+                <option value="{{ season }}" selected>{{ season }}</option>
+            {% endfor %}
+        </select>
+        <select name="ContextMeasure" id="context_measure" method="GET" action="/">
+            {% for measure in params[0] %}
+                <option value="{{ measure }}" selected>{{ measure }}</option>
+            {% endfor %}
+        </select>
+        <select name="SeasonType" id="season_type" method="GET" action="/">
+            {% for type in params[1] %}
+                <option value="{{ type }}" selected>{{ type }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="View Shot Chart">
+    </div>
+
+     <div class="advanced_filters"  style="margin-top:20px; margin-bottom:20px;">
+        <h2> Advanced Filters: </h2>
+         <select name="ClutchTime" id="clutch_type" method="GET" action="/">
+            {% for time in params[2] %}
+                <option value="{{ time }}"> {{ time }}</option>
+            {% endfor %}
+            <option value=" "selected>--In Clutch Time--</option>
+        </select>
+         <select name="Outcome" id="outcome" method="GET" action="/">
+            {% for outcome in params[3] %}
+                <option value="{{ outcome }}" selected>{{ outcome }}</option>
+            {% endfor %}
+            <option value=" " selected>--Game Outcome--</option>
+        </select>
+        <select name="While" id="ahead_behind" method="GET" action="/">
+            {% for param in params[4] %}
+                <option value="{{ param }}" selected>{{ param }}</option>
+            {% endfor %}
+            <option value=" " selected>--Game Scenario--</option>
+        </select>
+        <select name="Quarter" id="period" method="GET" action="/">
+            {% for period in params[5] %}
+                <option value="{{ period }}" selected>{{ period }}</option>
+            {%  endfor %}
+            <option value="0" selected>--Quarter--</option>
+        </select>
+        <select name="Month" id= "month" method="GET" action="/">
+            <option value='1'>Janaury</option>
+            <option value='2'>February</option>
+            <option value='3'>March</option>
+            <option value='4'>April</option>
+            <option value='5'>May</option>
+            <option value='6'>June</option>
+            <option value='7'>July</option>
+            <option value='8'>August</option>
+            <option value='9'>September</option>
+            <option value='10'>October</option>
+            <option value='11'>November</option>
+            <option value='12'>December</option>
+            <option selected value='0'>--Select Month</option>
+        </select>
+        <select name="LastNGames" id="last_n_games" method="GET" action="/">
+            {% for n in params[7] %}
+                <option value="{{ n }}" selected>{{ n }}</option>
+            {% endfor %}
+            <option value="0" selected>--Last N Games--</option>
+        </select>
+     </div>
+
+</body>
+</html>
