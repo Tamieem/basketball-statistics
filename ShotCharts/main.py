@@ -1,11 +1,14 @@
 from flask import *
 import os
 import random
-from nba_api.stats.endpoints import shotchartdetail
-from nba_api.stats.static import players
+from datetime import datetime
+import calendar
+from nba_api.stats.endpoints import shotchartdetail, commonplayerinfo
+from nba_api.stats.static import players, teams
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Patch
 from matplotlib.offsetbox import OffsetImage
+import urllib.request
 import io
 import base64
 
@@ -13,11 +16,13 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 
+
 app = Flask(__name__)
 app.secret_key = 'random string'
-UPLOAD_FOLDER = 'ShotCharts/static/uploads'
+UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 def create_court(ax =None, color='black', lw=2, out_lines=False):
 
     if ax is None:
@@ -59,13 +64,60 @@ def create_court(ax =None, color='black', lw=2, out_lines=False):
 
     return ax
 
+def text_builder(parameters):
+    text = ''
+    if parameters['Season'] is None:
+        current_season = datetime.now()
+        current_year = current_season.year
+        if current_season.month <= 9:
+            current_year -= 1
+        season = '{}-{}'.format(current_year, str(current_year + 1)[2:])
+    else:
+        season = parameters['Season']
+    text += season
+    season_type = parameters['SeasonType']
+    text+= ' ' + season_type + ' shots'
+    if parameters['ClutchTime'] != ' ':
+        clutch = ' in the ' + parameters['ClutchTime']
+        text += clutch
+    if parameters['Period'] != '0':
+        period = ' of the'
+        if parameters['Period'] == '1':
+            period += ' 1st quarter'
+        elif parameters['Period'] == '2':
+            period += ' 2nd quarter'
+        elif parameters['Period'] == '3':
+            period += ' 3rd quarter'
+        elif parameters['Period'] == '4':
+            period += ' 4th quarter'
+        text += period
+    if parameters['AheadBehind'] != ' ':
+        ahead_behind = ' while ' + parameters['AheadBehind']
+        text += ahead_behind
+    if parameters['Outcome'] != ' ':
+        if parameters['Outcome'] == 'W':
+            outcome = ' in a game win'
+        else:
+            outcome = ' in a game loss'
+        text += outcome
+    if parameters['LastNGames'] != '0':
+        games = ' for the last ' + parameters['LastNGames'] + ' games'
+        text +=games
+    if parameters['Month'] != '0':
+        month = ' in the month of ' + calendar.month_name[int(parameters['Month'])]
+        text += month
+    if parameters['OpponentTeamID'] != '0':
+        team = teams.find_team_name_by_id(parameters['OpponentTeamID'])
+        oppteam = ' versus ' + team['abbreviation']
+        text += oppteam
+    return text
 
-def get_Shotchart(player):
+
+def get_Shotchart(player, player_id):
     shots = player.shot_chart_detail.get_dict()['data']
     pic_link = urllib.request.urlretrieve(
-        "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/"+str(shots[0][3])+".png")
-    pic = plt.imread(pic_link[0])
-    plt.figure(figsize=(12, 11))
+        "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/latest/260x190/"+str(player_id)+".png")
+    plt.figure(figsize=(15, 13))
     made_count=0
     for shot in shots:
         time = shot[21]
@@ -84,9 +136,10 @@ def get_Shotchart(player):
     ax.set_ylabel('')
     ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
     fg = round((made_count/len(shots)*100), 2)
-    ax.text(-25, -100, '' + shots[0][4] + ' ' + player.parameters['ContextMeasure'], fontsize=22)
-    ax.text(-150, -50, '2018-2019 ' + player.parameters['SeasonType']+': ' + str(len(shots)) + ' total shots, ' +
-            str(fg) + '% FG', fontsize=18)
+
+    ax.text(-75, -70, '' + shots[0][4] + ' ' + player.parameters['ContextMeasure'], fontsize=22)
+    ax.text(-225, -50, ''+ text_builder(player.parameters) + ': ' + str(len(shots)) + ' total shots, ' +
+            str(fg) + '% FG', fontsize=12)
     ax.text(-245, 420, 'Source: stats.nba.com \nCreated by Tamieem Jaffary', fontsize=14)
     missed = Patch(color='blue', label='Missed Shot')
     made = Patch(color='red', label = "Made Shot")
@@ -95,8 +148,9 @@ def get_Shotchart(player):
     ax.set_ylim(422.5,-47.5)
     plt.axis('off')
     ax.set_facecolor('#EEEEEE')
+    pic = plt.imread(pic_link[0])
     img = OffsetImage(pic, zoom=.6)
-    img.set_offset((890,921))
+    img.set_offset((150,0))
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -129,6 +183,7 @@ def home():
         period = request.form['Period']
         month = request.form['Month']
         opp_team_id = request.form['OppTeam']
+        season = request.form['Season']
         player = shotchartdetail.ShotChartDetail(player_id=player_id, team_id=team_id,
                                                  context_measure_simple=context_measure_simple,
                                                  last_n_games=last_n_games, league_id=league_id, month=month,
@@ -136,8 +191,9 @@ def home():
                                                  clutch_time_nullable=clutch_time_nullable,
                                                  outcome_nullable=outcome_nullable,
                                                  ahead_behind_nullable=ahead_behind_nullable,
-                                                 season_type_all_star=season_type)
-        get_Shotchart(player)
+                                                 season_type_all_star=season_type,
+                                                 season_nullable=season)
+        get_Shotchart(player, player_id)
     players_list = players.get_active_players()
     team_list = teams.get_teams()
     seasons = ['1998-1999',
@@ -180,4 +236,3 @@ def home():
     img.seek(0)
     plot_url = base64.b64encode(img.getvalue()).decode()
     return render_template('home.html', teams_list=team_list, players_list=players_list, seasons=seasons, params=params, plot_url=plot_url)
-
