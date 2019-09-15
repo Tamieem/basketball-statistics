@@ -11,10 +11,11 @@ from matplotlib.offsetbox import OffsetImage
 import urllib.request
 import io
 import base64
+import PIL
+
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
-
 
 
 app = Flask(__name__)
@@ -236,3 +237,15 @@ def home():
     img.seek(0)
     plot_url = base64.b64encode(img.getvalue()).decode()
     return render_template('home.html', teams_list=team_list, players_list=players_list, seasons=seasons, params=params, plot_url=plot_url)
+
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+if __name__ == '__main__':
+    app.run()
