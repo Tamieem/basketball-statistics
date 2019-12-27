@@ -3,7 +3,7 @@ import os
 import random
 from datetime import datetime
 import calendar
-from nba_api.stats.endpoints import shotchartdetail, commonplayerinfo
+from nba_api.stats.endpoints import shotchartdetail, commonplayerinfo, playergamelogs
 from nba_api.stats.static import players, teams
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Patch
@@ -135,7 +135,7 @@ def get_Shotchart(player, player_id):
     ax = create_court(out_lines=True)
     ax.set_xlabel('')
     ax.set_ylabel('')
-    ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22)
+    ax.set_title(""+str(shots[0][4]) + " FGA", y=1.2, fontsize=22) #Takes 'Player's name' + 'FGA'
     fg = round((made_count/len(shots)*100), 2)
 
     ax.text(-75, -70, '' + shots[0][4] + ' ' + player.parameters['ContextMeasure'], fontsize=22)
@@ -150,8 +150,8 @@ def get_Shotchart(player, player_id):
     plt.axis('off')
     ax.set_facecolor('#EEEEEE')
     pic = plt.imread(pic_link[0])
-    img = OffsetImage(pic, zoom=.6)
-    img.set_offset((150,0))
+    img = OffsetImage(pic, zoom=.8)
+    img.set_offset((15,150))
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -174,7 +174,17 @@ def home():
         ### There are other filters to the search but they are nullable so we don't need to specify their values unless warranted
         player_id = request.form['player']
         player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_dict()['resultSets'][0]['rowSet']
+        #sleep(2)
+        season = request.form['Season']
         team_id = player_info[0][16]
+        ## Team ID is not accurate for previous seasons if player has been traded
+        raw_data = playergamelogs.PlayerGameLogs(player_id_nullable=player_id, get_request=False)
+        raw_data.parameters['Season'] = season
+        raw_data.get_request()
+        data_sets = raw_data.data_sets
+        team_id = data_sets[0].get_dict()['data'][0][3]
+        ### Gets Team ID of player at the start of the requested season ###
+
         context_measure_simple = request.form['ContextMeasure']
         season_type = request.form['SeasonType']
         clutch_time_nullable = request.form['ClutchTime']
@@ -184,7 +194,7 @@ def home():
         period = request.form['Period']
         month = request.form['Month']
         opp_team_id = request.form['OppTeam']
-        season = request.form['Season']
+
         player = shotchartdetail.ShotChartDetail(player_id=player_id, team_id=team_id,
                                                  context_measure_simple=context_measure_simple,
                                                  last_n_games=last_n_games, league_id=league_id, month=month,
@@ -217,7 +227,8 @@ def home():
                '2015-2016',
                '2016-2017',
                '2017-2018',
-               '2018-2019']
+               '2018-2019',
+               '2019-2020']
     context_measure = ['PTS', 'FG_PCT', 'FG3_PCT', 'PTS_FB',
                        'PTS_OFF_TOV', 'PTS_2ND_CHANCE',  'FG3M', 'FG3A', 'FGM', 'FGA']
     season_type = [ 'All Star', 'Playoffs', 'Pre Season', 'Regular Season']
@@ -243,9 +254,11 @@ def home():
 def not_found_error(error):
     return render_template('404.html'), 404
 
+
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('500.html'), 500
+
 
 if __name__ == '__main__':
     app.run()
