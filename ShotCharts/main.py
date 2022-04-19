@@ -173,15 +173,14 @@ def home():
         ### There are other filters to the search but they are nullable so we don't need to specify their values unless warranted
         player_id = request.form['player']
         player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_dict()['resultSets'][0]['rowSet']
-        #sleep(2)
         season = request.form['Season']
-        team_id = player_info[0][16]
+        team_id = player_info[0][18]
         ## Team ID is not accurate for previous seasons if player has been traded
         raw_data = playergamelogs.PlayerGameLogs(player_id_nullable=player_id, get_request=False)
         raw_data.parameters['Season'] = season
         raw_data.get_request()
         data_sets = raw_data.data_sets
-        team_id = data_sets[0].get_dict()['data'][0][3]
+        team_id = data_sets[0].get_dict()['data'][0][4]
         ### Gets Team ID of player at the start of the requested season ###
 
         context_measure_simple = request.form['ContextMeasure']
