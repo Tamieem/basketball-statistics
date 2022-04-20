@@ -1,31 +1,21 @@
 from flask import *
-import os
-import random
-from datetime import datetime
-import calendar
 from nba_api.stats.endpoints import shotchartdetail, commonplayerinfo, playergamelogs
 from nba_api.stats.static import players, teams
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle, Rectangle, Arc, Patch
-from matplotlib.offsetbox import OffsetImage
-import urllib.request
 import io
 import base64
-import PIL
 
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
+from create_shotchart import get_shotchart
 
 app = Flask(__name__)
 app.secret_key = 'random string'
 UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
+ALLOWED_EXTENSIONS = {'jpeg', 'jpg', 'png', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 @app.route("/", methods=['GET', 'POST'])
 def home():
-    ax = create_court()
     player_id = 2544
 
     if request.method == 'POST':
@@ -72,7 +62,7 @@ def home():
                                                  ahead_behind_nullable=ahead_behind_nullable,
                                                  season_type_all_star=season_type,
                                                  season_nullable=season)
-        get_Shotchart(player, player_id)
+        get_shotchart(player, player_id)
     players_list = players.get_active_players()
     team_list = teams.get_teams()
     seasons = ['1998-1999',
@@ -97,6 +87,17 @@ def home():
                '2017-2018',
                '2018-2019',
                '2019-2020']
+    params = get_params()
+    img = io.BytesIO()
+    plt.tick_params(labelbottom=False, labelleft=False)
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plot_url = base64.b64encode(img.getvalue()).decode()
+    return render_template('home.html', teams_list=team_list, players_list=players_list, seasons=seasons, params=params,
+                           plot_url=plot_url)
+
+
+def get_params():
     context_measure = ['PTS', 'FG_PCT', 'FG3_PCT', 'PTS_FB',
                        'PTS_OFF_TOV', 'PTS_2ND_CHANCE', 'FG3M', 'FG3A', 'FGM', 'FGA']
     season_type = ['All Star', 'Playoffs', 'Pre Season', 'Regular Season']
@@ -107,16 +108,7 @@ def home():
     period = ['1', '2', '3', '4']
     month = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     last_n_games = [str(x) for x in range(1, 26)]
-    params = [context_measure, season_type, clutch_time, outcome, ahead_behind, period, month, last_n_games]
-    img = io.BytesIO()
-    # plt.xlim(-300, 300)
-    # plt.ylim(422.5,-47.5)
-    plt.tick_params(labelbottom=False, labelleft=False)
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plot_url = base64.b64encode(img.getvalue()).decode()
-    return render_template('home.html', teams_list=team_list, players_list=players_list, seasons=seasons, params=params,
-                           plot_url=plot_url)
+    return [context_measure, season_type, clutch_time, outcome, ahead_behind, period, month, last_n_games]
 
 
 @app.errorhandler(404)
