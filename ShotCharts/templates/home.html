@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Tamieem's Shot Chart Maker</title>
+    <
 </head>
 <body>
     <div class="display">
@@ -10,7 +11,7 @@
         <img src="data:image/png;base64, {{ plot_url }}">
     </div>
     <form action="" method="post">
-    <div class="filters" style="margin-top: 10px; margin-bottom:20px;">
+    <div class="filters" id="app" style="margin-top: 10px; margin-bottom:20px;">
         <select name="player" id="select_player" method="GET" action="/" style="width: 250px !important; min-width: 100px; max-width: 500px;">
             {% for player in players_list  %}
                 <option value={{ player['id'] }}>{{ player['full_name'] }}</option>
@@ -55,7 +56,7 @@
         <input type="submit" value="View Shot Chart">
     </div>
 
-     <div class="advanced_filters"  style="margin-top:20px; margin-bottom:20px;">
+     <div class="advanced_filters"  id="advanced-app" style="margin-top:20px; margin-bottom:20px;">
         <h2> Advanced Filters: </h2>
          <select name="ClutchTime" id="clutch_type" method="GET" action="/">
             {% for time in params[2] %}
@@ -110,5 +111,8 @@
         </select>
      </div>
     </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
