@@ -14,6 +14,23 @@ ALLOWED_EXTENSIONS = {'jpeg', 'jpg', 'png', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
+@app.route("/api/players", methods=['GET'])
+def getPlayers():
+    season = request.args.get('season')
+    if not season:
+        return players.get_active_players()
+    players_list = players.get_players()
+    curr_players = []
+    for player in players_list:
+        player_info = commonplayerinfo.CommonPlayerInfo(player_id=player['id'])
+        available_seasons = player_info.available_seasons.get_dict()['data']
+        flat_list = [item for sublist in available_seasons for item in sublist]
+        if season not in flat_list:
+            curr_players.append(player)
+
+    return players_list
+
+
 @app.route("/", methods=['GET', 'POST'])
 def home():
     player_id = 2544
